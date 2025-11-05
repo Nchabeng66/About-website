@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard | Administrator OES</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; }
+    .app-container { display: none; height: 100vh; }
+
+    /* Sidebar styling */
+    aside.sidebar {
+      background: #20232a;
+      color: white;
+      width: 220px;
+      padding: 20px;
+      box-sizing: border-box;
+      height: 100vh;
+      float: left;
+    }
+    .logo { font-size: 1.5em; font-weight: bold; margin-bottom: 20px; }
+    nav.main-nav a {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      color: #bbb;
+      text-decoration: none;
+    }
+    nav.main-nav a i { margin-right: 10px; }
+    nav.main-nav a.active,
+    nav.main-nav a:hover { color: #61dafb; }
+
+    /* Main content */
+    main.main-content {
+      margin-left: 220px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    header.top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .breadcrumb { font-size: 1.2em; }
+    .user-profile { font-weight: bold; }
+    .user-profile a {
+      color: #007bff;
+      text-decoration: none;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    /* Dashboard grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+      gap: 20px;
+    }
+    .widget {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
+      position: relative;
+    }
+    .widget h3 { margin-top: 0; }
+    .data-value {
+      font-size: 2em;
+      font-weight: bold;
+    }
+    .icon-overlay {
+      position: absolute;
+      font-size: 4em;
+      color: #eef3f7;
+      top: 10px;
+      right: 10px;
+    }
+
+    .quick-links-panel {
+      margin-top: 40px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .quick-link-card {
+      background: white;
+      padding: 15px;
+      flex: 1 1 200px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
+      text-decoration: none;
+      color: #212529;
+    }
+    .quick-link-card h4 {
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+    .quick-link-card i {
+      font-size: 1.5em;
+    }
+
+    /* Modal styles */
+    .modal-bg {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    .modal {
+      background: white;
+      padding: 25px;
+      width: 350px;
+      border-radius: 8px;
+      box-sizing: border-box;
+      position: relative;
+    }
+    .modal h2 { margin-top: 0; }
+    .modal label { display: block; margin: 15px 0 5px; font-weight: 600; }
+    .modal input {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .modal button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      background: #007bff;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-size: 1.1em;
+      cursor: pointer;
+    }
+    .modal button:hover {
+      background: #0056b3;
+    }
+    .modal .switch-link {
+      margin-top: 10px;
+      text-align: center;
+      cursor: pointer;
+      color: #007bff;
+      user-select: none;
+    }
+    .error-msg {
+      color: red;
+      margin-top: 10px;
+      min-height: 1em;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sign In Modal -->
+<div id="signin-modal" class="modal-bg">
+  <div class="modal">
+    <h2>Sign In</h2>
+    <form id="signin-form">
+      <label for="signin-username">Username</label>
+      <input type="text" id="signin-username" required autocomplete="username"/>
+      <label for="signin-password">Password</label>
+      <input type="password" id="signin-password" required autocomplete="current-password"/>
+      <button type="submit">Sign In</button>
+    </form>
+    <div class="error-msg" id="signin-error"></div>
+    <div class="switch-link" id="to-signup">Don't have an account? Sign Up</div>
+  </div>
+</div>
+
+<!-- Sign Up Modal -->
+<div id="signup-modal" class="modal-bg" style="display:none;">
+  <div class="modal">
+    <h2>Sign Up</h2>
+    <form id="signup-form">
+      <label for="signup-username">Username</label>
+      <input type="text" id="signup-username" required autocomplete="username"/>
+      <label for="signup-email">Email</label>
+      <input type="email" id="signup-email" required autocomplete="email"/>
+      <label for="signup-password">Password</label>
+      <input type="password" id="signup-password" required autocomplete="new-password"/>
+      <button type="submit">Sign Up</button>
+    </form>
+    <div class="error-msg" id="signup-error"></div>
+    <div class="switch-link" id="to-signin">Already have an account? Sign In</div>
+  </div>
+</div>
+
+<!-- Dashboard and sidebar container -->
+<div class="app-container" role="main" aria-label="dashboard content">
+
+  <aside class="sidebar" role="navigation">
+    <div class="logo">OES Admin</div>
+    <nav class="main-nav">
+      <a href="#" class="nav-item active">
+        <i class="fas fa-tachometer-alt"></i> Dashboard
+      </a>
+      <a href="#" class="nav-item">
+        <i class="fas fa-users"></i> Manage Users
+      </a>
+      <a href="#" class="nav-item">
+        <i class="fas fa-book"></i> Manage Subjects
+      </a>
+      <a href="best 2.html" class="nav-item">
+        <i class="fas fa-clipboard-list"></i> All Exams
+      </a>
+      <a href="#" class="nav-item">
+        <i class="fas fa-chart-line"></i> Performance Reports
+      </a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <header class="top-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="breadcrumb">
+        Dashboard / <strong>System Overview</strong>
+      </div>
+      <div class="user-profile" style="font-weight:bold;">
+        <i class="fas fa-user-circle"></i> <span id="user-display">Admin Smith</span> | <a href="#" id="logout-btn">Logout</a>
+      </div>
+    </header>
+
+    <section class="content-body">
+      <h1>Administrator Dashboard</h1>
+      <p>Welcome! Here is an overview of the system's current status and performance metrics.</p>
+
+      <div class="dashboard-grid">
+
+        <div class="widget total-users">
+          <h3>Total Registered Students</h3>
+          <p class="data-value">452</p>
+          <i class="fas fa-user-graduate icon-overlay"></i>
+        </div>
+
+        <div class="widget total-examiners">
+          <h3>Total Examiners</h3>
+          <p class="data-value">15</p>
+          <i class="fas fa-chalkboard-teacher icon-overlay"></i>
+        </div>
+
+        <div class="widget active-exams">
+          <h3>Exams Currently Active</h3>
+          <p class="data-value">4</p>
+          <i class="fas fa-calendar-check icon-overlay"></i>
+        </div>
+
+        <div class="widget question-count">
+          <h3>Total Questions in Bank</h3>
+          <p class="data-value">1,280</p>
+          <i class="fas fa-database icon-overlay"></i>
+        </div>
+
+      </div>
+
+      <h2 style="margin-top: 40px;">Recent Activity & Quick Links</h2>
+
+      <div class="quick-links-panel">
+        <a href="#" class="quick-link-card">
+          <i class="fas fa-user-plus"></i>
+          <h4>Add New User</h4>
+          <p>Register a new student or examiner account.</p>
+        </a>
+
+        <a href="#" class="quick-link-card">
+          <i class="fas fa-chart-bar"></i>
+          <h4>View System Reports</h4>
+          <p>Analyze overall system performance and trends.</p>
+        </a>
+
+        <a href="#" class="quick-link-card">
+          <i class="fas fa-edit"></i>
+          <h4>Manage Subjects</h4>
+          <p>Add new academic subjects or update existing ones.</p>
+        </a>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<script>
+  // In-memory users store (For demo only: refresh loses data)
+  const users = {
+    "admin": { password: "admin123", displayName: "Admin Smith" }
+  };
+  let currentUser = null;
+
+  // Elements
+  const signinModal = document.getElementById('signin-modal');
+  const signupModal = document.getElementById('signup-modal');
+  const appContainer = document.querySelector('.app-container');
+  const userDisplay = document.getElementById('user-display');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  // Show/hide functions
+  function showModal(modal) { modal.style.display = 'flex'; }
+  function hideModal(modal) { modal.style.display = 'none'; }
+
+  // On page load, show sign-in modal and hide dashboard
+  function init() {
+    appContainer.style.display = 'none';
+    showModal(signinModal);
+  }
+
+  // Switch modal links
+  document.getElementById('to-signup').addEventListener('click', () => {
+    hideModal(signinModal);
+    clearFormError('signin-error');
+    showModal(signupModal);
+  });
+
+  document.getElementById('to-signin').addEventListener('click', () => {
+    hideModal(signupModal);
+    clearFormError('signup-error');
+    showModal(signinModal);
+  });
+
+  // Clear error message helper
+  function clearFormError(id) {
+    document.getElementById(id).textContent = '';
+  }
+
+  // Sign In form submission
+  document.getElementById('signin-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const username = document.getElementById('signin-username').value.trim();
+    const password = document.getElementById('signin-password').value;
+    const errorEl = document.getElementById('signin-error');
+
+    if (users[username] && users[username].password === password) {
+      currentUser = username;
+      userDisplay.textContent = users[username].displayName || username;
+      hideModal(signinModal);
+      appContainer.style.display = 'flex';
+      e.target.reset();
+      errorEl.textContent = "";
+    } else {
+      errorEl.textContent = 'Invalid username or password.';
+    }
+  });
+
+  // Sign Up form submission
+  document.getElementById('signup-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const username = document.getElementById('signup-username').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const errorEl = document.getElementById('signup-error');
+
+    if (users[username]) {
+      errorEl.textContent = 'Username already taken.';
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      errorEl.textContent = 'Invalid email address.';
+      return;
+    }
+    if (password.length < 6) {
+      errorEl.textContent = 'Password must be at least 6 characters.';
+      return;
+    }
+
+    users[username] = { password: password, displayName: username };
+    alert('Account created. Please sign in.');
+    hideModal(signupModal);
+    clearFormError('signup-error');
+    showModal(signinModal);
+    e.target.reset();
+  });
+
+  // Logout button
+  logoutBtn.addEventListener('click', e => {
+    e.preventDefault();
+    if (confirm('Are you sure you want to log out?')) {
+      currentUser = null;
+      appContainer.style.display = 'none';
+      showModal(signinModal);
+    }
+  });
+
+  // Initialize app on load
+  window.onload = init;
+</script>
+
+</body>
+</html>
